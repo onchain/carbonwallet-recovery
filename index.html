@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CarbonWallet recovery tool</title>
+    <link rel="stylesheet" href="css/multisig.css">
+
+    <script type="text/javascript" src="lib/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="lib/bitcoinjs.js"></script>
+    <script type="text/javascript" src="multisig/multisig.js"></script>
+    <script type="text/javascript">
+      "use strict";
+
+      $(function() {
+        var cleanInput = function(str) {
+          return str.replace(/\W/g, '');
+        }
+        var proceed = function(button, next_step_id) {
+          $(button).parents('footer').hide();
+		  $('.step').hide();
+          $(next_step_id).show();
+        }
+
+        // Parse query string and prepopulate.
+        var query = window.location.search.substring(1);
+        if (query) {
+          var key_to_element = {
+            'xpubkey1':            '#xpubkey1',
+            'xpubkey2':            '#xpubkey2',
+            'xpubkey3':            '#xpubkey3',
+            'max_index':           '#max_index',
+            'shared_seed':         '#shared_seed',
+            'user_seed':           '#user_seed',
+            'destination_address': '#destination_address'
+          };
+          var vars = query.split('&');
+          for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split('=');
+            var key = decodeURIComponent(pair[0]);
+            var value = decodeURIComponent(pair[1]);
+            if (!value) continue;
+
+            // Look up the element from the key_to_element table and prefill it with the value.
+            $(key_to_element[key]).val(value);
+          }
+        }
+
+        // Hide all the steps, then only show step 1.
+        $('.step').hide();
+        $('#step_1').show();
+
+        $('.step button').on('click', function() {
+          $(this).attr('disabled', true).text('Please wait ...')
+        });
+
+        // Step 1, collect the xpubkeys, construct child addresses and fetch their unspent outputs.
+        $('#step_1 button').on('click', function() {
+          var lastAddressIndex = $('.max_index input').val();
+          var xpubkeys = $('.xpubkey').map(function(i, xpub) { return cleanInput($(xpub).val()); }).toArray();
+
+          // Make an address view.
+          var addressView = new Multisig.AddressView({
+            container: '#transaction'
+          });
+
+          var button = this;
+          Multisig.app = new Multisig.App({
+            xpubkeys: xpubkeys,
+            lastAddressIndex: parseInt(lastAddressIndex),
+            onReady: function() {
+              addressView.render(this); // When multisig ready, render the address view.
+              proceed(button, '#step_2');
+            }
+          });
+
+          // Set the default fees.
+          $('.miner_fee').val(Multisig.app.getMinimumFee());
+        })
+
+        // Step 2, collect the shared and user key, decrypt shared key, build transaction and sign it.
+        $('#step_2 button').on('click', function() {
+          var button = this;
+          var percent = 0;
+
+          Multisig.app.buildTransaction({
+            minerFee: $('.miner_fee').val(),
+            destinationAddress: $('.destination_address input').val(),
+            seeds: {
+              shared: cleanInput($('.shared .key').val()),
+              shared_password: $('.shared .password').val(),
+              user: cleanInput($('.user .key').val())
+            },
+            // BIP38 decryption progress method.
+            onProgress1: function(percent) {
+              var cur_percent = Math.ceil(percent);
+              if (cur_percent == percent) return;
+              if (cur_percent > 0) $('.decrypt_progress').show();
+              else if (cur_percent == 100) $('.decrypt_progress').hide();
+              percent = cur_percent;
+              $('#decrypt_percent').text(percent);
+            },
+            onReady: function() {
+              $('.fees_btc').text(Multisig.app.tx.getMinerFee());
+              $('.total_btc').text(Multisig.app.tx.getDestinationAmount());
+              $('.raw').val(Multisig.app.tx.transaction.toHex());
+			  proceed(button, '#step_3');
+            },
+            // BIP38 decryption progress method.
+            onProgress2: function(percent) {
+              var cur_percent = Math.ceil(percent);
+              if (cur_percent == percent) return;
+              if (cur_percent > 0) $('.decrypt_progress2').show();
+              else if (cur_percent == 100) $('.decrypt_progress2').hide();
+              percent = cur_percent;
+              $('#decrypt_percent2').text(percent);
+            }
+          })
+        })
+      })
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>CarbonWallet Recovery Tool</h1>
+      <small>
+        <a href="https://github.com/onchain/wallet-recovery">Source code</a>
+        |
+        <a href="https://github.com/onchain/wallet-recovery/blob/master/README.md">Instructions</a>
+      </small>
+    </header>
+    <div id="steps">
+      <div id="step_1" class="step">
+        <header>
+          <h2>Step 1</h2>
+          <p>Let's generate your wallet addresses.</p>
+        </header>
+        <div class="xpubkeys">
+          <p>Please enter the extended public keysfor your wallet.</p>
+          <p>Your Public Key (Key #1)</p>
+          
+          <textarea id="xpubkey1" class="xpubkey key" style="width: 90%" placeholder="xpub...">xpub661MyMwAqRbcGbHQE3MmP67WPXLvLLWKSahfE7u9jm3CdU7PWBnSCGyeh1FD7NQ27CTWRRAzvtnTG7ChEBv8DTchpLyFZy4NCg9Qe91td83</textarea>
+          <p>Your Backup Public Key (Key #2)</p>
+          <textarea id="xpubkey2" class="xpubkey key" style="width: 90%" placeholder="xpub...">xpub661MyMwAqRbcG79b8ibaRpVorfiJbc5yQf1sz1pbKeMAZhX9UnoExKdffo5U3URtYcViutVAV6Hm1wAMygekKAQK3UPLSZbuWXaQpbtTBKt</textarea>
+          <p>Your providers Key (Key #3)</p>
+          <textarea id="xpubkey3" class="xpubkey key" style="width: 90%" placeholder="xpub...">xpub661MyMwAqRbcGbnj2QkdikWA44PeUPs8eHXNk5Ywf7nFv2WgbiNTQZQhcp5brAnwYbaTcvYeW5rof5G58z8eBDV5BNKohJCQKzahjcTptnt</textarea>
+
+        </div>
+        <div class="max_index">
+          <p>Please enter the highest HD index to check for balance.</p>
+          <input id="max_index" type="number" placeholder="index" value="10">
+        </div>
+        <footer>
+          <button>Continue</button>
+        </footer>
+      </div>
+
+      <div id="step_2" class="step">
+        <header>
+          <h2>Step 2</h2>
+          <p>
+            Now enter the key backups from your backup PDF document.
+            <br>
+            <small>Protip: you can now safely go offline if you'd like.</small>
+          </p>
+        </header>
+        <div class="shared">
+          <label>
+            Your Encrypted Private Key(BIP38 Format)
+          </label>
+			<br />
+            <small class="decrypt_progress">Decrypting ... <strong><span id="decrypt_percent">0</span>%</strong></small>
+			<br />
+          <textarea id="shared_seed" style="width: 90%" class="key">6PRM1sAkLs71m8MqAvoxdGck95iSBnWMN5mZmpomPdRSazUhiLE3Pk9RPL</textarea>
+			<br />
+          <input type="password" class="password" value="swirl work everybody breathe approach rather" placeholder="Enter your vault password">
+
+        </div>
+        <div class="user">
+          <label>Your Backup Encrypted Private Key(BIP38 Format)
+		 </label>
+			<br />
+            <small class="decrypt_progress2">Decrypting ... <strong><span id="decrypt_percent2">0</span>%</strong></small>
+			<br />
+          <textarea id="user_seed" style="width: 90%" class="key">6PRWLctRAowdiiCR6Zto71EYpiBm5aWSUW8M5Ju7va6sqi6jJCbRVkNrUa</textarea>
+
+        </div>
+        <div class="destination_address">
+          <label>And decide where you want the bitcoins to be sent to</label>
+          <input id="destination_address" type="text" class="key" placeholder="Enter a bitcoin address" value="1STRonGxnFTeJiA7pgyneKknR29AwBM77">
+        </div>
+        <div class="fees">
+          <label>What would you like the fee to be</label>
+          <input type="text" class="miner_fee" placeholder="Enter miner fees">
+        </div>
+        <footer>
+          <button>Continue</button>
+        </footer>
+      </div>
+
+      <div id="step_3" class="step">
+        <header>
+          <h2>Step 3</h2>
+          <p>Now you can copy the raw transaction and paste it into any bitcoin client to be broadcast to the network.</p>
+        </header>
+		<textarea class="raw" style="width:90%">Your transaction will appear here in raw hex format ...</textarea>
+      </div>
+    </div>
+    <div id="transaction">
+      <table>
+        <thead>
+          <tr>
+            <th>Node path</th>
+            <th>Address</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr class="unspent">
+            <th colspan="2">Balance</th>
+            <th><span class="balance_btc">0.00000000</span> BTC</th>
+          </tr>
+          <tr class="fees">
+            <th colspan="2">Fees</th>
+            <th><span class="fees_btc">0.00000000</span> BTC</th>
+          </tr>
+          <tr class="total">
+            <th colspan="2">Total to be sent</th>
+            <th><span class="total_btc">0.00000000</span> BTC</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </body>
+</html>
