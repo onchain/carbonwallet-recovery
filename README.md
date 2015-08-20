@@ -5,7 +5,7 @@ You can use this open source tool to send all the coins from your Multi Sig Pape
 
 In order to do this you will need the data from your wallet backup that you either printed out or saved somewhere.
 
-http://onchain.github.io/wallet-recovery
+http://onchain.github.io/carbonwallet-recovery
 
 ## Usage
 
@@ -47,7 +47,7 @@ One alternative is to run Chrome with the `--allow-access-from-files` parameter.
 
 This tool was designed to have a minimal code foot print so it could be easily auditable.
 
-All the domain specific crypto is done in [`multisig.js`](https://github.com/onchain/wallet-recovery/blob/master/multisig/multisig.js).
+All the domain specific crypto is done in [`multisig.js`](https://github.com/onchain/carbonwallet-recovery/blob/master/multisig/multisig.js).
 
 Everything else is either UI code or dependency libraries.
 
