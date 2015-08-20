@@ -177,7 +177,7 @@
         return Bitcoin.HDNode.fromBase58(seed_or_xprvkey);
       }
 
-      return false;
+      return Bitcoin.HDNode.fromSeedHex(seed_or_xprvkey);;
     },
     signInputs: function() {
       var that = this;
@@ -197,18 +197,25 @@
         $.each(address.pubkeys, function(pubkey_index, pubkey) {
 		
           $.each(that.hdWallets, function(hd_index, hd) {
+		  
             // Get the private key for this address.
             var prvkey = address.getPrvKey(hd);
-
             // Sign the random hash to see if the current private key corresponds to the current public key.
             var sig = prvkey.sign(hash);
-            if (!pubkey.verify(hash, sig)) {
-				return;
-			} else {
-
+            if (pubkey.verify(hash, sig)) {
 				// If it does, to the actual signing.
 				that.tb.sign(address_index, prvkey, address.redeemScript);
 			}
+			
+            // Get the private key for a smartphone stzle address
+            var prvkey = hd.derive(62014).privKey;
+            // Sign the random hash to see if the current private key corresponds to the current public key.
+            var sig = prvkey.sign(hash);
+            if (pubkey.verify(hash, sig)) {
+				// If it does, to the actual signing.
+				that.tb.sign(address_index, prvkey, address.redeemScript);
+			}  
+			
           })
         })
       })
@@ -248,9 +255,8 @@
         
         var pubkeysForIndex = []
         
-        pubkeysForIndex.push(masterNodes[2].pubKey)
+        pubkeysForIndex.push(masterNodes[1].pubKey)
         pubkeysForIndex.push(masterNodes[0].derive(1).derive(index).pubKey)
-        pubkeysForIndex.push(masterNodes[1].derive(1).derive(index).pubKey)
         addresses.push(new Multisig.Address(index, pubkeysForIndex));
       }
       return addresses;
@@ -293,6 +299,9 @@
         seeds: {}
       });
 
+	  var mnemonic = new Mnemonic("english");
+	  var seed  = mnemonic.toSeed(options.seeds.user);
+	  this.tx.seeds.user = seed;
       this.tx.onReady = options.onReady;
 
       // Build transaction.
@@ -306,11 +315,11 @@
       });
       worker.decrypt(options.seeds.shared, options.seeds.shared_password);
 	  
-      var worker = new Multisig.Bip38Worker({
-        decrypt_done: this.checkIfFinished.bind(this),
-        decrypt_working: options.onProgress2
-      });
-      worker.decrypt(options.seeds.user, options.seeds.shared_password);
+      //var worker = new Multisig.Bip38Worker({
+      //  decrypt_done: this.checkIfFinished.bind(this),
+      //  decrypt_working: options.onProgress2
+      //});
+      //worker.decrypt(options.seeds.user, options.seeds.shared_password);
     },
     checkIfFinished: function(shared_seed) {
 		if(! this.tx.seeds.shared)
