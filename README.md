@@ -1,9 +1,13 @@
-Multisig Wallet recovery tool
+Carbon Wallet Recovery Tool
 ============================
 
-You can use this open source tool to send all the coins from your Multi Sig Paper Backupt to any bitcoin address you choose.
+You can use this open source tool to send all the coins from your CarbonWallet backup to any bitcoin address you choose.
 
-In order to do this you will need the data from your wallet backup that you either printed out or saved somewhere.
+In order to do this you will need the data from your wallet backup that you either printed out or saved somewhere. It would loo  something like this.
+
+![Wallet Backup](https://raw.githubusercontent.com/onchain/carbonwallet-recovery/gh-pages/wallet-backup.png)
+
+You can download this github code and use it locally or you can trust github and access it with the link below.
 
 http://onchain.github.io/carbonwallet-recovery
 
@@ -13,9 +17,10 @@ http://onchain.github.io/carbonwallet-recovery
 
 To complete this recovery process, you will need the following information:
 
-* 3 extended public keys (xpubkeys)
-* 2 BIP38 Keys
-* Your wallet passphrase
+* 2 extended public keys (xpubkeys)
+* 1 BIP38 Keys
+* Your Carbon Wallet passphrase
+* Your CarbonKey backup passphrase
 
 ### Online/Offline
 
@@ -31,44 +36,10 @@ After verifying you then broadcast it using [Bitcoin Core](https://bitcoin.org/e
 
 ### Running
 
-You can download this tool and run it locally or use our hosted version at http://coinbase.github.io/multisig-tool.
+http://onchain.github.io/carbonwallet-recovery
 
 #### Running locally
 
-If you wish to run the tool locally, you need to do it through a local web server. This is because we use Web Workers for decrypting your BIP38 encrypted shared key seed, and Web Workers are not permitted to run through the `file:///` protocol.
-
-_Protip™_: If you use Ruby, you can spin up a web server in the current directory with this one-liner:
-
-    gem install thin; ruby -rrack -e "include Rack; Handler::Thin.run Builder.new { run Directory.new '' }"
-
-One alternative is to run Chrome with the `--allow-access-from-files` parameter.
-
-## Development
-
-This tool was designed to have a minimal code foot print so it could be easily auditable.
-
-All the domain specific crypto is done in [`multisig.js`](https://github.com/onchain/carbonwallet-recovery/blob/master/multisig/multisig.js).
-
-Everything else is either UI code or dependency libraries.
-
-## Dependencies
-
-### BitcoinJS
-
-We use the [BitcoinJS](https://github.com/bitcoinjs/bitcoinjs-lib) library to handle HD wallets, Bitcoin keys, addresses and transactions.
-
-We used this command to build the [`lib/bitcoinjs.js`](https://github.com/coinbase/multisig-tool/blob/master/lib/bitcoinjs.js):
-
-1. Install packages with `npm`:
-
-    `npm install bitcoinjs-lib --save`
-
-2. Use `browserify` to resolve dependencies:
-
-    `browserify -r bitcoinjs-lib -r buffer > lib/bitcoinjs.js`
-
-### BIP38
-
-We use the [BIP38](https://github.com/cryptocoinjs/bip38) library to decrypt the encrypted shared key seeds.
+Download the files and access index.html from your browser. (Tested with Firefox)
 
 
