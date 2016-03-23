@@ -176,7 +176,6 @@
       if (seed_or_xprvkey.match(/^xprv[a-zA-Z0-9]*$/)) {
         return Bitcoin.HDNode.fromBase58(seed_or_xprvkey);
       }
-
       return Bitcoin.HDNode.fromSeedHex(seed_or_xprvkey);;
     },
     signInputs: function() {
@@ -190,6 +189,8 @@
 
       // Generate a random thing to sign.
       var hash = new Buffer.Buffer(32);
+      
+      console.log('Address ' + this.hdWallets[1].getAddress());
 
       $.each(this.inputAddresses, function(address_index, address) {
         // The signatures need to be in the same order as the
@@ -204,15 +205,20 @@
             var sig = prvkey.sign(hash);
             if (pubkey.verify(hash, sig)) {
 				// If it does, to the actual signing.
+                console.log("Signing with BIP38");
 				that.tb.sign(address_index, prvkey, address.redeemScript);
 			}
 			
             // Get the private key for a smartphone stzle address
-            var prvkey = hd.derive(62014).privKey;
+            var prvkey = hd.derive(0).privKey;
+            
+            console.log(prvkey.toWIF());
+            
             // Sign the random hash to see if the current private key corresponds to the current public key.
             var sig = prvkey.sign(hash);
             if (pubkey.verify(hash, sig)) {
 				// If it does, to the actual signing.
+                console.log("Signing with BIP39");
 				that.tb.sign(address_index, prvkey, address.redeemScript);
 			}  
 			
@@ -301,7 +307,8 @@
 
 	  var mnemonic = new Mnemonic("english");
 	  var seed  = mnemonic.toSeed(options.seeds.user);
-	  this.tx.seeds.user = seed;
+      var hd = Bitcoin.HDNode.fromSeedHex(seed)
+	  this.tx.seeds.user = hd.privKey.toWIF();
       this.tx.onReady = options.onReady;
 
       // Build transaction.
@@ -326,8 +333,8 @@
 			this.tx.seeds.shared = shared_seed;
 		else if(! this.tx.seeds.user)
 			this.tx.seeds.user = shared_seed;
-		
-		if(this.tx.seeds.user && this.tx.seeds.shared)	
+        
+		if(this.tx.seeds.shared)	
 			this.finishBuildTransaction();
 	},
     finishBuildTransaction: function() {
