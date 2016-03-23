@@ -3,7 +3,9 @@ Carbon Wallet Recovery Tool
 
 You can use this open source tool to send all the coins from your CarbonWallet backup to any bitcoin address you choose.
 
-In order to do this you will need the data from your wallet backup that you either printed out or saved somewhere. It would loo  something like this.
+http://onchain.github.io/carbonwallet-recovery
+
+In order to do this you will need the data from your wallet backup that you either printed out or saved somewhere. It looks  something like this.
 
 ![Wallet Backup](https://raw.githubusercontent.com/onchain/carbonwallet-recovery/gh-pages/wallet-backup.png)
 
